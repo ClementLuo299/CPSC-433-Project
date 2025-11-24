@@ -21,5 +21,5 @@ try:
 except Exception as e:
     exit()
 
-print("File contents:", text_data)
-print("Integers:", integer_inputs)
+# text_data contains the text file date
+# integer_inputs contains a list of the rest of the arguments
