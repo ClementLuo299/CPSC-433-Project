@@ -4,4 +4,3 @@ class InputProcessor:
 
     def process_data(self, text_data, integer_inputs):
         pass
-
