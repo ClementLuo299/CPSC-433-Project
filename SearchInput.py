@@ -1,9 +1,7 @@
 class SearchInput:
-    def __init__(self):
+    def __init__(self, name, lecture_slots, tutorial_slots, lectures, tutorials):
+        self.name = ""
         self.lecture_slots = []
         self.tutorial_slots = []
         self.lectures = []
         self.tutorials = []
-
-    def process_data(self, text_data, integer_inputs):
-        pass
