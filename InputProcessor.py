@@ -180,5 +180,24 @@ class InputProcessor:
         pair = process_pair(sections[8])
         partial_assignments = process_partial_assignments(sections[9])
 
-        out = SearchInput(sections[0],lecture_slots, tutorial_slots, lectures, tutorials, not_compatible, unwanted, preferences, pair, partial_assignments)
+        out = SearchInput(
+            sections[0],
+            lecture_slots,
+            tutorial_slots,
+            lectures,
+            tutorials,
+            not_compatible,
+            unwanted,
+            preferences,
+            pair,
+            partial_assignments,
+            integer_inputs[0],
+            integer_inputs[1],
+            integer_inputs[2],
+            integer_inputs[3],
+            integer_inputs[4],
+            integer_inputs[5],
+            integer_inputs[6],
+            integer_inputs[7]
+        )
         return out
