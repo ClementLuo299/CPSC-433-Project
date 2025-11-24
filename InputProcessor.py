@@ -1,3 +1,4 @@
+from SearchInput import SearchInput
 from helper_classes.Slot import Slot
 from helper_classes.Lecture import Lecture
 
@@ -114,19 +115,52 @@ def process_tutorials(lines):
     return tutorials
 
 def process_not_compatible(lines):
-    pass
+    lst = set()
+    for line in lines:
+        data = line.split(',')
+        cleaned_data = [x.strip() for x in data]
+        l = frozenset([cleaned_data[0],cleaned_data[1]])
+        lst.add(l)
+    return lst
 
 def process_unwanted(lines):
-    pass
+    lst = set()
+    for line in lines:
+        data = line.split(',')
+        cleaned_data = [x.strip() for x in data]
+        slot = cleaned_data[1] + ' ' + cleaned_data[2]
+        l = frozenset([cleaned_data[0],slot])
+        lst.add(l)
+    return lst
 
 def process_preferences(lines):
-    pass
+    lst = set()
+    for line in lines:
+        data = line.split(',')
+        cleaned_data = [x.strip() for x in data]
+        slot = cleaned_data[0] + ' ' + cleaned_data[1]
+        l = frozenset([cleaned_data[2],slot, int(cleaned_data[3])])
+        lst.add(l)
+    return lst
 
 def process_pair(lines):
-    pass
+    lst = set()
+    for line in lines:
+        data = line.split(',')
+        cleaned_data = [x.strip() for x in data]
+        l = frozenset([cleaned_data[0],cleaned_data[1]])
+        lst.add(l)
+    return lst
 
 def process_partial_assignments(lines):
-    pass
+    lst = set()
+    for line in lines:
+        data = line.split(',')
+        cleaned_data = [x.strip() for x in data]
+        slot = cleaned_data[1] + ' ' + cleaned_data[2]
+        l = frozenset([cleaned_data[0],slot])
+        lst.add(l)
+    return lst
 
 class InputProcessor:
     def __init__(self):
@@ -136,3 +170,15 @@ class InputProcessor:
     def process_data(text_data, integer_inputs):
         sections = split_sections(text_data)
 
+        lecture_slots = process_lecture_slots(sections[1])
+        tutorial_slots = process_tutorial_slots(sections[2])
+        lectures = process_lectures(sections[3])
+        tutorials = process_tutorials(sections[4])
+        not_compatible = process_not_compatible(sections[5])
+        unwanted = process_unwanted(sections[6])
+        preferences = process_preferences(sections[7])
+        pair = process_pair(sections[8])
+        partial_assignments = process_partial_assignments(sections[9])
+
+        out = SearchInput(sections[0],lecture_slots, tutorial_slots, lectures, tutorials, not_compatible, unwanted, preferences, pair, partial_assignments)
+        return out
