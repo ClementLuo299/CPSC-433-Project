@@ -1,7 +1,4 @@
-# University Course Scheduling System (CPSC 433)
 
-## Overview
-This project implements an intelligent scheduler for assigning university lectures and tutorials to time slots. It uses an **And-Tree Search** algorithm with **Branch-and-Bound** pruning to satisfy hard constraints (validity) and minimize soft constraint penalties (quality).
 
 ## Algorithm Details
 
