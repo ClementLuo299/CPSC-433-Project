@@ -1,5 +1,7 @@
 import heapq
+import random
 from collections import defaultdict
+import time
 from state import State
 
 def calculate_heuristic(state, weights):
@@ -29,8 +31,8 @@ def calculate_heuristic(state, weights):
     # Check all slots
     all_slots = state.problem.lecture_slots + state.problem.tutorial_slots
     for slot in all_slots:
-        current_usage = state.slot_usage.get(slot, {'LEC': 0, 'TUT': 0})
-        total_current = current_usage['LEC'] + current_usage['TUT']
+        current_usage = state.slot_usage.get(slot, {'LEC': 0, 'TUT': 0, 'LAB': 0})
+        total_current = current_usage['LEC'] + current_usage['TUT'] + current_usage['LAB']
         max_possible = total_current + potential_additions[slot]
         
         if max_possible < slot.min_filled:
@@ -96,7 +98,14 @@ def calculate_heuristic(state, weights):
 
     return h
 
-def find_initial_solution(state, weights, depth=0):
+def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=False):
+    if nodes_visited is None:
+        nodes_visited = [0]
+    
+    nodes_visited[0] += 1
+    if nodes_visited[0] > 5000: # Increased limit to 5000 nodes
+        return None, float('inf')
+
     # Greedy DFS to find ONE solution quickly
     if state.is_complete():
         return state, state.calculate_cost(weights) + state.calculate_minfilled_cost(weights[0])
@@ -127,7 +136,10 @@ def find_initial_solution(state, weights, depth=0):
         return None, float('inf')
         
     # Sort candidates by degree?
-    best_var, valid_slots = candidates[0]
+    if randomize:
+        best_var, valid_slots = random.choice(candidates)
+    else:
+        best_var, valid_slots = candidates[0]
     
     # LCV
     # Sort slots by cost
@@ -136,11 +148,18 @@ def find_initial_solution(state, weights, depth=0):
         next_state = state.assign(best_var, slot)
         cost = next_state.calculate_cost(weights)
         scored_slots.append((cost, slot))
-    scored_slots.sort(key=lambda x: x[0])
+    
+    if randomize:
+        # Add some noise to sorting or just shuffle top K?
+        # Let's just shuffle equivalent costs or small noise
+        random.shuffle(scored_slots) # Full shuffle for exploration
+        scored_slots.sort(key=lambda x: x[0] + random.random() * 0.1) # Slight noise to break ties randomly
+    else:
+        scored_slots.sort(key=lambda x: x[0])
     
     for _, slot in scored_slots:
         next_state = state.assign(best_var, slot)
-        sol, cost = find_initial_solution(next_state, weights, depth+1)
+        sol, cost = find_initial_solution(next_state, weights, depth+1, nodes_visited, randomize)
         if sol:
             return sol, cost
             
@@ -150,6 +169,7 @@ def solve(problem, weights):
     # Weights: Wminfilled, Wpref, Wpair, Wsecdiff, pen_notpaired, pen_section
     
     # Precompute valid slots
+    print("Precomputing valid slots...")
     problem.precompute_valid_slots()
     
     # Initial State
@@ -169,9 +189,28 @@ def solve(problem, weights):
 
     # 1. Find Initial Solution (Greedy DFS) to set bound
     # This helps prune the search space massively
+    print("Finding initial solution (Greedy DFS)...")
     best_solution, best_cost = find_initial_solution(initial_state, weights)
     
+    if best_solution:
+        print(f"Initial solution found with cost: {best_cost}")
+    else:
+        print("No initial solution found with greedy DFS. Trying randomized restarts...")
+        # Try randomized restarts
+        for i in range(20): # Increased to 20 restarts
+            print(f"Restart {i+1}/20...")
+            sol, cost = find_initial_solution(initial_state, weights, nodes_visited=[0], randomize=True)
+            if sol:
+                best_solution = sol
+                best_cost = cost
+                print(f"Initial solution found in restart {i+1} with cost: {best_cost}")
+                break
+        
+        if not best_solution:
+            print("No initial solution found after restarts. Starting exhaustive search (this may be slow).")
+
     # 2. Branch-and-Bound Search (A*)
+    print("Starting Branch-and-Bound search...")
     pq = []
     start_g = initial_state.calculate_cost(weights)
     start_h = calculate_heuristic(initial_state, weights)
@@ -179,7 +218,15 @@ def solve(problem, weights):
     
     nodes_expanded = 0
     
+    start_time = time.time()
+    timeout_seconds = 300 # 5 minutes timeout
+    
     while pq:
+        # Check timeout
+        if time.time() - start_time > timeout_seconds:
+            print(f"Timeout reached ({timeout_seconds}s). Returning best solution found so far.")
+            break
+            
         f, state = heapq.heappop(pq)
         
         # Pruning
@@ -195,6 +242,8 @@ def solve(problem, weights):
             continue
             
         nodes_expanded += 1
+        if nodes_expanded % 1000 == 0:
+            print(f"Nodes expanded: {nodes_expanded}, PQ size: {len(pq)}, Current Best Cost: {best_cost}")
         
         # MRV: Select unassigned variable
         unassigned = state.get_unassigned_courses()

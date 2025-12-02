@@ -13,7 +13,11 @@ class Course:
         id_parts = self.id.split()
         self.dept = id_parts[0]
         self.number = int(id_parts[1])
-        self.type = "LEC" if "LEC" in id_parts and "TUT" not in id_parts and "LAB" not in id_parts else "TUT"
+        self.type = "LEC"
+        if "TUT" in id_parts:
+            self.type = "TUT"
+        elif "LAB" in id_parts:
+            self.type = "LAB"
         
         # Extract section number
         # Example: CPSC 433 LEC 01 -> section 01
@@ -111,6 +115,7 @@ class ProblemInstance:
         self.lecture_slots = []
         self.tutorial_slots = []
         self.incompatible = set() # Set of frozenset({c1, c2})
+        self.incompatible_map = defaultdict(set) # course -> set[course]
         self.unwanted = defaultdict(list) # course -> list[slot_id]
         self.preferences = defaultdict(list) # course -> list[(slot_id, value)]
         self.pairs = [] # list[(c1, c2)]
@@ -140,9 +145,9 @@ class ProblemInstance:
                 # 2. Evening
                 if course.is_evening and slot.hour < 18:
                     continue
-                # 3. Tuesday 11:00
-                if course.type == "LEC" and slot.day == "TU" and slot.hour == 11 and slot.minute == 0:
-                    continue
+                # 3. Tuesday 11:00 - REMOVED (Input file allows it)
+                # if course.type == "LEC" and slot.day == "TU" and slot.hour == 11 and slot.minute == 0:
+                #     continue
                 # 4. AL (If we enforced it, check here)
                 
                 valid.append(slot)

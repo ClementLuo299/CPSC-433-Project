@@ -2,7 +2,7 @@ class State:
     def __init__(self, problem, assignments=None, slot_usage=None, assigned_500_slots=None):
         self.problem = problem
         self.assignments = assignments if assignments is not None else {}
-        # slot_usage: slot -> {'LEC': count, 'TUT': count}
+        # slot_usage: slot -> {'LEC': count, 'TUT': count, 'LAB': count}
         self.slot_usage = slot_usage if slot_usage is not None else {}
         # assigned_500_slots: set of atomic slots occupied by 500-level courses
         self.assigned_500_slots = assigned_500_slots if assigned_500_slots is not None else set()
@@ -21,14 +21,16 @@ class State:
         
         new_slot_usage = self.slot_usage.copy()
         if slot not in new_slot_usage:
-            new_slot_usage[slot] = {'LEC': 0, 'TUT': 0}
+            new_slot_usage[slot] = {'LEC': 0, 'TUT': 0, 'LAB': 0}
         else:
             new_slot_usage[slot] = new_slot_usage[slot].copy()
             
         if course.type == "LEC":
             new_slot_usage[slot]['LEC'] += 1
-        else:
+        elif course.type == "TUT":
             new_slot_usage[slot]['TUT'] += 1
+        elif course.type == "LAB":
+            new_slot_usage[slot]['LAB'] += 1
             
         new_assigned_500_slots = self.assigned_500_slots
         if course.is_500_level:
@@ -39,11 +41,16 @@ class State:
 
     def is_valid(self, course, slot):
         # 1. Max Capacity
-        usage = self.slot_usage.get(slot, {'LEC': 0, 'TUT': 0})
+        usage = self.slot_usage.get(slot, {'LEC': 0, 'TUT': 0, 'LAB': 0})
         if course.type == "LEC":
-            if usage['LEC'] >= slot.lecture_max: return False
-        else:
-            if usage['TUT'] >= slot.lab_max: return False
+            if usage['LEC'] >= slot.lecture_max: 
+                return False
+        elif course.type == "TUT":
+            if usage['TUT'] >= slot.lecture_max: # TUT uses lecture_max (col 2)
+                return False
+        elif course.type == "LAB":
+            if usage['LAB'] >= slot.lab_max: # LAB uses lab_max (col 3)
+                return False
             
         # 2. Active Learning (AL)
         # Assumption: If AL required, LectureMax (or LabMax) must be > 0? 
@@ -69,10 +76,13 @@ class State:
                         return False
 
         # 4. Not Compatible
-        for assigned_course, assigned_slot in self.assignments.items():
-            if frozenset({course, assigned_course}) in self.problem.incompatible:
-                if slot.overlaps(assigned_slot):
-                    return False
+        # Optimized check using adjacency list
+        if course in self.problem.incompatible_map:
+            for incompatible_course in self.problem.incompatible_map[course]:
+                if incompatible_course in self.assignments:
+                    assigned_slot = self.assignments[incompatible_course]
+                    if slot.overlaps(assigned_slot):
+                        return False
         
         # 5. Unwanted
         if slot.id in self.problem.unwanted[course]:
@@ -94,10 +104,10 @@ class State:
             if slot.hour < 18:
                 return False
                 
-        # 9. Tuesday 11:00-12:30 (No Lectures)
-        if course.type == "LEC":
-            if slot.day == "TU" and slot.hour == 11 and slot.minute == 0:
-                return False
+        # 9. Tuesday 11:00-12:30 (No Lectures) - REMOVED
+        # if course.type == "LEC":
+        #     if slot.day == "TU" and slot.hour == 11 and slot.minute == 0:
+        #         return False
                 
         # 10. Special CPSC 851/913
         # "If CPSC 351 is scheduled, CPSC 851 must be TU 18:00 (and cannot overlap 351)."
@@ -221,7 +231,7 @@ class State:
     def calculate_minfilled_cost(self, w_minfilled):
         cost = 0
         for slot, usage in self.slot_usage.items():
-            total_usage = usage['LEC'] + usage['TUT']
+            total_usage = usage['LEC'] + usage['TUT'] + usage['LAB']
             if total_usage < slot.min_filled:
                 cost += (slot.min_filled - total_usage) * w_minfilled
         return cost

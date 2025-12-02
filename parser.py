@@ -62,6 +62,8 @@ def parse_file(filename):
             c2 = problem.get_course(id2)
             if c1 and c2:
                 problem.incompatible.add(frozenset({c1, c2}))
+                problem.incompatible_map[c1].add(c2)
+                problem.incompatible_map[c2].add(c1)
         elif mode == "Unwanted":
             parts = line.split(',')
             c_id = parts[0].strip()

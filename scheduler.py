@@ -17,10 +17,13 @@ def main():
     
     args = parser.parse_args()
     
+    print("Parsing input file...")
     problem = parse_file(args.filename)
+    print(f"Parsed {len(problem.lectures)} lectures and {len(problem.tutorials)} tutorials.")
     
     weights = (args.w_minfilled, args.w_pref, args.w_pair, args.w_secdiff, args.pen_notpaired, args.pen_section)
     
+    print("Starting solver...")
     solution, cost = solve(problem, weights)
     
     if solution:
