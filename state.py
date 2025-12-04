@@ -95,10 +95,16 @@ class State:
                 return False
                 
         # 7. 500-Level
-        if course.is_500_level:
-            for s500 in self.assigned_500_slots:
-                if slot.overlaps(s500):
-                    return False
+        # if course.is_500_level:
+        #     for s500 in self.assigned_500_slots:
+        #         if slot.overlaps(s500):
+        #             return False
+        # Isn't this (ie the one above) constraint meant to be for lectures only???
+        if course.is_500_level and course.type == "LEC":
+            for assigned_course, assigned_slot in self.assignments.items():
+                if assigned_course.is_500_level and assigned_course.type == "LEC":
+                    if slot.overlaps(assigned_slot):
+                        return False
         
         # 8. Evening Classes
         if course.is_evening:
