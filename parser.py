@@ -68,7 +68,7 @@ def parse_file(filename):
             parts = line.split(',')
             c_id = parts[0].strip()
             day = parts[1].strip()
-            time = parts[2].strip()
+            time = parts[2].strip().rstrip('.')
             slot_id = f"{day}, {time}"
             c = problem.get_course(c_id)
             if c:
@@ -76,7 +76,7 @@ def parse_file(filename):
         elif mode == "Preferences":
             parts = line.split(',')
             day = parts[0].strip()
-            time = parts[1].strip()
+            time = parts[1].strip().rstrip('.')
             c_id = parts[2].strip()
             val = int(parts[3].strip())
             slot_id = f"{day}, {time}"
@@ -95,7 +95,7 @@ def parse_file(filename):
             parts = line.split(',')
             c_id = parts[0].strip()
             day = parts[1].strip()
-            time = parts[2].strip()
+            time = parts[2].strip().rstrip('.')
             slot_id = f"{day}, {time}"
             c = problem.get_course(c_id)
             if c:

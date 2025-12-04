@@ -135,137 +135,6 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
             
     return None, float('inf')
 
-# def try_one_greedy_build(initial_state, problem, max_steps=100000):
-#     """
-#     How about we just try to build ONE complete schedule greedily from initial_state.
-
-#     - Respects all HARD constraints via state.is_valid.
-#     - Ignores SOFT constraints while constructing.
-#     """
-#     state = initial_state
-#     steps = 0
-
-#     while not state.is_complete():
-#         steps += 1
-#         if steps > max_steps:
-#             # Safety guard so we don't loop forever in some weird situation
-#             print ("Guard time")
-#             return None, False
-
-#         unassigned = state.get_unassigned_courses()
-
-#         # Choose next course (variable)
-
-#         # Lectures are less flexible. lectures first, then tutorials/labs
-#         lectures = [c for c in unassigned if c.type == "LEC"]
-#         others   = [c for c in unassigned if c.type != "LEC"]
-
-#         candidate_set = lectures if lectures else others
-
-#         best_courses = []      # list of courses with minimal valid-slot count
-#         best_valid_map = {}    # course -> its valid slot list
-#         min_valid = float('inf')
-
-#         for course in candidate_set:
-#             valid_slots = [
-#                 slot for slot in problem.valid_slots[course]
-#                 if state.is_valid(course, slot)
-#             ]
-
-#             if not valid_slots:
-#                 # This course cannot go anywhere in this attempt,
-#                 # but maybe another course still can.
-#                 # We don't immediately fail here; we let MRV pick someone else.
-#                 continue
-
-#             count = len(valid_slots)
-
-#             if count < min_valid:
-#                 min_valid = count
-#                 best_courses = [course]
-#                 best_valid_map[course] = valid_slots
-#             elif count == min_valid:
-#                 best_courses.append(course)
-#                 best_valid_map[course] = valid_slots
-
-#         # If NO course had any valid slots then this attempt is doomed
-#         if not best_courses:
-#             total_courses = len(state.problem.lectures) + len(state.problem.tutorials)
-#             unassigned = state.get_unassigned_courses()
-#             assigned = total_courses - len(unassigned)
-#             print(f"    Attempt failed after assigning {assigned}/{total_courses} courses.")
-
-#             # Choose one representative stuck course to inspect
-#             stuck_course = unassigned[0]
-#             print(f"    Inspecting stuck course: {stuck_course.id}")
-
-#             # Static valid slots for this course
-#             static_slots = state.problem.valid_slots[stuck_course]
-#             print(f"      Static valid slots count: {len(static_slots)}")
-#             for slot in static_slots:
-#                 ok = state.is_valid(stuck_course, slot)
-#                 print(f"        Slot {slot.id}: is_valid = {ok}")
-
-#             return None, False
-
-
-#         # ie-breaking for course choice ---
-
-#         if len(best_courses) == 1:
-#             chosen_course = best_courses[0]
-#         else:
-#             # All have same minimal number of valid slots.
-#             # Randomly choose among these equally constrained courses.
-#             chosen_course = random.choice(best_courses)
-
-#         candidate_slots = best_valid_map[chosen_course]
-
-#         # Choose a slot for this course ---
-
-#         if len(candidate_slots) == 1:
-#             chosen_slot = candidate_slots[0]
-#         else:
-#             # Simple strategy: randomly pick among valid slots.
-#             chosen_slot = random.choice(candidate_slots)
-
-#         # Assign and continue
-#         state = state.assign(chosen_course, chosen_slot)
-
-#     # If we exit the loop, all courses are assigned and hard constraints are satisfied.
-#     return state, True
-
-# def build_initial_solution_greedy(initial_state, problem, weights, max_restarts=50):
-#     """
-#     Try multiple greedy constructions with different tie-breaks to find
-#     ONE complete, only hard-valid schedule.
-#     """
-#     best_state = None
-#     best_cost = float('inf')
-
-#     for r in range(max_restarts):
-#         print(f"  Greedy restart {r+1}/{max_restarts}...")
-#         state, success = try_one_greedy_build(initial_state, problem)
-
-#         if not success or state is None:
-#             continue
-
-#         # We found a complete schedule; compute its Eval cost once
-#         total_cost = state.calculate_cost(weights) + state.calculate_minfilled_cost(weights[0])
-
-#         print(f"    → Found complete schedule with cost {total_cost}")
-
-#         if total_cost < best_cost:
-#             best_cost = total_cost
-#             best_state = state
-
-#             # We could keep looking for an even better one,
-#             # but for our purposes, the first success is already good enough.
-#             # If you want, you can break here.
-#             break
-
-#     if best_state is None:
-#         return None, float('inf')
-#     return best_state, best_cost
 
 
 
@@ -289,7 +158,7 @@ def solve(problem, weights):
     
     # Apply Partial Assignments first (Hard Constraint)
     for course, slot_id in problem.partial_assignments.items():
-        slot_type = course.type
+        slot_type = "LEC" if course.type == "LEC" else "TUT"
         slot = problem.get_slot(slot_id, slot_type)
         if not slot:
             print(f"Error: Partial assignment slot {slot_id} not found for {course.id}")

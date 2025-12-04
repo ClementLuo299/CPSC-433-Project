@@ -29,7 +29,13 @@ def main():
 
     #Do the search
     print("Starting solver...")
-    solution, cost = solve(problem, weights)
+    result = solve(problem, weights)
+    
+    if result is None:
+        print("No solution found (Error or Infeasible).")
+        return
+
+    solution, cost = result
 
     #Print solution in proper format if a solution exists
     if solution:
