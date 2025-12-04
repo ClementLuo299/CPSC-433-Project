@@ -53,11 +53,6 @@ class State:
                 return False
             
         # 2. Active Learning (AL)
-        # Assumption: If AL required, LectureMax (or LabMax) must be > 0? 
-        # Or maybe AL is not strictly enforced by capacity in this simplified input?
-        # Prompt says: "If a course requires AL, the slot must have ALmax > 0."
-        # Given input format `3,2,1`, we assume `3` is LectureMax. If `3 > 0`, it supports AL?
-        # Let's assume standard slots support AL if they have capacity.
         
         # 3. No Overlap (Lecture vs its own Tutorial)
         if course.type == "TUT" and course.parent_id:
