@@ -72,7 +72,7 @@ def parse_file(filename):
             slot_id = f"{day}, {time}"
             c = problem.get_course(c_id)
             if c:
-                problem.unwanted[c].add(slot_id)
+                problem.unwanted[c].append(slot_id)
         elif mode == "Preferences":
             parts = line.split(',')
             day = parts[0].strip()

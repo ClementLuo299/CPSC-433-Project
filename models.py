@@ -123,7 +123,7 @@ class ProblemInstance:
         self.tutorial_slots = []
         self.incompatible = set() # Set of frozenset({c1, c2})
         self.incompatible_map = defaultdict(set) # course -> set[course]
-        self.unwanted = defaultdict(set) # course -> list[slot_id]
+        self.unwanted = defaultdict(list) # course -> list[slot_id]
         self.preferences = defaultdict(list) # course -> list[(slot_id, value)]
         self.pairs = [] # list[(c1, c2)]
         self.partial_assignments = {} # course -> slot_id
