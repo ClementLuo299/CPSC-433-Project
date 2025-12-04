@@ -1,5 +1,8 @@
 from collections import defaultdict
 
+#Dictionary containing bit mappings for slots
+slot_index = {}
+
 class Course:
     def __init__(self, line):
         # Format: "CPSC 433 LEC 01" or "CPSC 433 LEC 01 TUT 01"
@@ -71,33 +74,37 @@ class Slot:
         self.minute = int(time_parts[1])
         
         # Atomic Slots for Collision Detection
-        # "Linked Slots" logic
-        self.atomic_slots = set()
+        # "Linked Slots" logic using bitmask
+        self.mask = 0
         if self.slot_type == "LEC":
             if self.day == "MO": # MWF
-                self.atomic_slots.add(("MO", self.time))
-                self.atomic_slots.add(("WE", self.time))
-                self.atomic_slots.add(("FR", self.time))
+                slot_list = [("MO", self.time), ("WE", self.time), ("FR", self.time)]
             elif self.day == "TU": # TR
-                self.atomic_slots.add(("TU", self.time))
-                self.atomic_slots.add(("TH", self.time))
+                slot_list = [("TU", self.time), ("TH", self.time)]
             else:
                 # Fallback or other days
-                self.atomic_slots.add((self.day, self.time))
+                slot_list = [(self.day, self.time)]
         else: # TUT
             if self.day == "MO": # MW
-                self.atomic_slots.add(("MO", self.time))
-                self.atomic_slots.add(("WE", self.time))
+                slot_list = [("MO", self.time), ("WE", self.time)]
             elif self.day == "TU": # TR
-                self.atomic_slots.add(("TU", self.time))
-                self.atomic_slots.add(("TH", self.time))
+                slot_list = [("TU", self.time), ("TH", self.time)]
             elif self.day == "FR": # F
-                self.atomic_slots.add(("FR", self.time))
+                slot_list = [("FR", self.time)]
             else:
-                self.atomic_slots.add((self.day, self.time))
+                slot_list = [(self.day, self.time)]
+
+        # Build atomic slots set and mask
+        for dt in slot_list:
+            # Assign bit to atomic slot if new
+            if dt not in slot_index:
+                slot_index[dt] = len(slot_index)
+
+            bit = slot_index[dt]
+            self.mask |= (1 << bit)
 
     def overlaps(self, other_slot):
-        return not self.atomic_slots.isdisjoint(other_slot.atomic_slots)
+        return (self.mask & other_slot.mask) != 0
 
     def __repr__(self):
         return self.id

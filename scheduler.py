@@ -1,4 +1,5 @@
 import sys
+import time
 import argparse
 from parser import parse_file
 from solver import solve
@@ -27,9 +28,15 @@ def main():
     #Collect numerical arguments
     weights = (args.w_minfilled, args.w_pref, args.w_pair, args.w_secdiff, args.pen_notpaired, args.pen_section)
 
-    #Do the search
+    #Do the search and record time
     print("Starting solver...")
+    start_time = time.time()
     solution, cost = solve(problem, weights)
+    end_time = time.time()
+    elapsed = end_time - start_time
+
+    #Print search time elapsed
+    print(f"Search completed in {elapsed:.3f} seconds.")
 
     #Print solution in proper format if a solution exists
     if solution:
