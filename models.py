@@ -69,35 +69,50 @@ class Slot:
         time_parts = self.time.split(':')
         self.hour = int(time_parts[0])
         self.minute = int(time_parts[1])
+        self.start_min = self.hour * 60 + self.minute
+        
+        # Determine Duration
+        # Standard UofC: MWF = 60 mins (50+10), TR = 90 mins (75+15)
+        # We assume this applies to ALL slots based on Day.
+        if self.day in ["TU", "TH"]:
+            self.duration = 90
+        else:
+            self.duration = 60
+            
+        self.end_min = self.start_min + self.duration
         
         # Atomic Slots for Collision Detection
-        # "Linked Slots" logic
+        # Store (Day, Start, End)
         self.atomic_slots = set()
+        days = []
         if self.slot_type == "LEC":
             if self.day == "MO": # MWF
-                self.atomic_slots.add(("MO", self.time))
-                self.atomic_slots.add(("WE", self.time))
-                self.atomic_slots.add(("FR", self.time))
+                days = ["MO", "WE", "FR"]
             elif self.day == "TU": # TR
-                self.atomic_slots.add(("TU", self.time))
-                self.atomic_slots.add(("TH", self.time))
+                days = ["TU", "TH"]
             else:
-                # Fallback or other days
-                self.atomic_slots.add((self.day, self.time))
+                days = [self.day]
         else: # TUT
             if self.day == "MO": # MW
-                self.atomic_slots.add(("MO", self.time))
-                self.atomic_slots.add(("WE", self.time))
+                days = ["MO", "WE"]
             elif self.day == "TU": # TR
-                self.atomic_slots.add(("TU", self.time))
-                self.atomic_slots.add(("TH", self.time))
-            elif self.day == "FR": # F
-                self.atomic_slots.add(("FR", self.time))
+                days = ["TU", "TH"]
             else:
-                self.atomic_slots.add((self.day, self.time))
+                days = [self.day]
+                
+        for d in days:
+            self.atomic_slots.add((d, self.start_min, self.end_min))
 
     def overlaps(self, other_slot):
-        return not self.atomic_slots.isdisjoint(other_slot.atomic_slots)
+        # Check intersection of atomic slots
+        # Two slots overlap if they share a Day AND their time ranges overlap
+        for d1, s1, e1 in self.atomic_slots:
+            for d2, s2, e2 in other_slot.atomic_slots:
+                if d1 == d2:
+                    # Check time overlap: max(start1, start2) < min(end1, end2)
+                    if max(s1, s2) < min(e1, e2):
+                        return True
+        return False
 
     def __repr__(self):
         return self.id

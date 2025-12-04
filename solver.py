@@ -46,37 +46,7 @@ def calculate_heuristic(state, weights):
         # If course has no preferences, min cost is 0
         if course not in state.problem.preferences:
             min_pref_cost = 0
-        else:
-            # Check all valid slots
-            # If a valid slot is NOT in preferences, cost is 0?
-            # Wait, how are preferences defined?
-            # "If assigned slot != preferred slot, add specific preference penalty."
-            # This usually implies:
-            # List of (Slot, Penalty).
-            # If assigned to Slot S, and S is in list, we pay Penalty?
-            # No, usually "Preference: I want A (value 10)".
-            # If I get A, cost 0. If I get B, cost 10?
-            # The prompt says: "Preferences: If assigned slot != preferred slot, add specific preference penalty."
-            # Input: `MO, 10:00, CPSC 231 LEC 01, 7`
-            # This means: "Preferred is MO 10:00. Penalty for NOT getting it is 7."
-            # So if I assign MO 10:00, cost 0.
-            # If I assign anything else, cost 7.
-            # What if multiple preferences?
-            # "MO 10:00, 7", "TU 11:00, 3".
-            # If MO 10:00 -> Miss TU 11:00 (3). Total 3.
-            # If TU 11:00 -> Miss MO 10:00 (7). Total 7.
-            # If WE 9:00 -> Miss both (10). Total 10.
-            
-            # So for a course, `base_penalty` = sum of all preference values.
-            # If assigned to `s`, `reduction` = sum of values for preferences satisfied by `s`.
-            # `cost` = `base_penalty` - `reduction`.
-            # We want min cost.
-            # So we want max reduction.
-            
-            # Pre-calculate base_penalty for the course?
-            pass
-
-        # Let's implement this logic correctly.
+        
         prefs = state.problem.preferences.get(course, [])
         if not prefs:
             continue
@@ -171,6 +141,14 @@ def solve(problem, weights):
     # Precompute valid slots
     print("Precomputing valid slots...")
     problem.precompute_valid_slots()
+    
+    # Fail-Fast: Check for courses with NO valid slots
+    for course, slots in problem.valid_slots.items():
+        if not slots:
+            print(f"CRITICAL ERROR: Course {course.id} has NO valid slots after precomputation!")
+            print(f"  Unwanted: {problem.unwanted[course]}")
+            print(f"  Evening: {course.is_evening}")
+            return None, float('inf')
     
     # Initial State
     initial_state = State(problem)

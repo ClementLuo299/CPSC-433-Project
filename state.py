@@ -4,8 +4,8 @@ class State:
         self.assignments = assignments if assignments is not None else {}
         # slot_usage: slot -> {'LEC': count, 'TUT': count, 'LAB': count}
         self.slot_usage = slot_usage if slot_usage is not None else {}
-        # assigned_500_slots: set of atomic slots occupied by 500-level courses
-        self.assigned_500_slots = assigned_500_slots if assigned_500_slots is not None else set()
+        # assigned_500_slots: list of Slot objects occupied by 500-level courses
+        self.assigned_500_slots = assigned_500_slots if assigned_500_slots is not None else []
         
     def is_complete(self):
         return len(self.assignments) == (len(self.problem.lectures) + len(self.problem.tutorials))
@@ -34,8 +34,8 @@ class State:
             
         new_assigned_500_slots = self.assigned_500_slots
         if course.is_500_level:
-            new_assigned_500_slots = self.assigned_500_slots.copy()
-            new_assigned_500_slots.update(slot.atomic_slots)
+            new_assigned_500_slots = list(self.assigned_500_slots) # Copy list
+            new_assigned_500_slots.append(slot)
             
         return State(self.problem, new_assignments, new_slot_usage, new_assigned_500_slots)
 
@@ -96,8 +96,9 @@ class State:
                 
         # 7. 500-Level
         if course.is_500_level:
-            if not slot.atomic_slots.isdisjoint(self.assigned_500_slots):
-                return False
+            for s500 in self.assigned_500_slots:
+                if slot.overlaps(s500):
+                    return False
         
         # 8. Evening Classes
         if course.is_evening:
