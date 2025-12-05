@@ -106,12 +106,9 @@ class State:
                 return False
                 
         # 7. 500-Level
-        # if course.is_500_level:
-        #     for s500 in self.assigned_500_slots:
-        #         if slot.overlaps(s500):
-        #             return False
-        # Isn't this (ie the one above) constraint meant to be for lectures only???
+        # "All lectures with course number 5XX must be in non-overlapping time slots (pairwise incompatible)."
         if course.is_500_level and course.type == "LEC":
+            # Check against all currently assigned 500-level LECTURES
             for assigned_course, assigned_slot in self.assignments.items():
                 if assigned_course.is_500_level and assigned_course.type == "LEC":
                     if slot.overlaps(assigned_slot):
@@ -122,22 +119,18 @@ class State:
             if slot.hour < 18:
                 return False
                 
-        # 9. Tuesday 11:00-12:30 (No Lectures) - REMOVED
-        # if course.type == "LEC":
-        #     if slot.day == "TU" and slot.hour == 11 and slot.minute == 0:
-        #         return False
-                
-        # 10. Special CPSC 851/913
-        # "If CPSC 351 is scheduled, CPSC 851 must be TU 18:00 (and cannot overlap 351)."
-        # This is a complex conditional constraint.
-        # It implies we need to check if 351 is assigned.
-        # Let's handle this by checking if `course` is 851 or 913, or if `course` is 351/413.
-        # This is very specific. I'll implement a helper for this.
+        # 9. Tuesday 11:00-12:30 (No Lectures)
+        if course.type == "LEC":
+            if slot.day == "TU" and slot.hour == 11 and slot.minute == 0:
+                return False
+            
         if not self.check_special_constraints(course, slot):
             return False
 
         return True
 
+    
+# Special Constraints (CPSC 851/913)
     def check_special_constraints(self, course, slot):
         # CPSC 851 vs CPSC 351
         # CPSC 913 vs CPSC 413
@@ -158,6 +151,18 @@ class State:
                 # And cannot overlap 351 (Implicitly handled by Not Compatible if defined, or we check here)
                 if slot.overlaps(self.assignments[c351]):
                     return False
+        
+        # If 351 exists in the PROBLEM (even if not assigned yet), 851 MUST be TU 18:00
+        if course.number == 851 and course.dept == "CPSC":
+             # Check existence of 351
+             c351 = None
+             for c in self.problem.lectures:
+                 if c.dept == "CPSC" and c.number == 351:
+                     c351 = c
+                     break
+             if c351:
+                 if slot.id != "TU, 18:00":
+                     return False
         
         # Case 2: Assigning 351
         if course.number == 351 and course.dept == "CPSC":
@@ -186,6 +191,17 @@ class State:
                     return False
                 if slot.overlaps(self.assignments[c413]):
                     return False
+
+        # If 413 exists in the PROBLEM, 913 MUST be TU 18:00
+        if course.number == 913 and course.dept == "CPSC":
+             c413 = None
+             for c in self.problem.lectures:
+                 if c.dept == "CPSC" and c.number == 413:
+                     c413 = c
+                     break
+             if c413:
+                 if slot.id != "TU, 18:00":
+                     return False
                     
         if course.number == 413 and course.dept == "CPSC":
             c913 = None

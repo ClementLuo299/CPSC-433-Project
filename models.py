@@ -11,18 +11,29 @@ class Course:
         
         # Parse ID components
         id_parts = self.id.split()
-        self.dept = id_parts[0]
-        self.number = int(id_parts[1])
-        self.type = "LEC"
-        if "TUT" in id_parts:
-            self.type = "TUT"
-        elif "LAB" in id_parts:
-            self.type = "LAB"
-        
-        # Extract section number
-        # Example: CPSC 433 LEC 01 -> section 01
-        # Example: CPSC 433 LEC 01 TUT 01 -> section 01 (of TUT)
-        self.section = id_parts[-1]
+        if len(id_parts) >= 4:
+            self.dept = id_parts[0]
+            try:
+                self.number = int(id_parts[1])
+            except ValueError:
+                self.number = 0 # Default if not integer
+            self.type = "LEC"
+            if "TUT" in id_parts:
+                self.type = "TUT"
+            elif "LAB" in id_parts:
+                self.type = "LAB"
+            self.section = id_parts[-1]
+        else:
+            # Fallback for non-standard IDs (e.g. "L1")
+            self.dept = "TEST"
+            self.number = 0
+            self.type = "LEC" # Default to LEC
+            self.section = "01"
+            # Try to guess type if "TUT" or "LAB" is in the string
+            if "TUT" in self.id:
+                self.type = "TUT"
+            elif "LAB" in self.id:
+                self.type = "LAB"
         
         self.is_500_level = (self.number // 100 == 5)
         self.is_evening = self.section.startswith('9')
@@ -66,10 +77,21 @@ class Slot:
         # self.min_filled = int(parts[4])
 
         # Parse capacities
-        # Assumption: LectureMax, LectureMin, ALMax
-        self.lecture_max = int(parts[2])
-        self.lecture_min = int(parts[3])
-        self.al_max = int(parts[4])
+        # Format: Day, Time, Max, Min, AL_Max
+        # Example: MO, 8:00, 2, 0, 0
+        try:
+            self.lecture_max = int(parts[2])
+            self.lecture_min = int(parts[3])
+            # Check if AL_Max exists (it might be missing in some inputs)
+            if len(parts) > 4:
+                self.al_max = int(parts[4])
+            else:
+                self.al_max = 0 # Default to 0 if not specified
+        except (IndexError, ValueError):
+             # Fallback or error logging
+             self.lecture_max = 0
+             self.lecture_min = 0
+             self.al_max = 0
         
         # Parse time for evening check
         time_parts = self.time.split(':')

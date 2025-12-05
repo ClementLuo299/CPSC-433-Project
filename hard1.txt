@@ -1,0 +1,23 @@
+Name:
+HardTest5_Chain
+Lecture slots:
+MO, 8:00, 2, 0, 0
+MO, 9:00, 2, 0, 0
+TU, 9:30, 2, 0, 0
+Tutorial slots:
+Lectures:
+L1, false
+L2, false
+L3, false
+L4, false
+Tutorials:
+Not compatible:
+L1, L2
+L3, L4
+Unwanted:
+L4, MO, 9:00
+Preferences:
+Pair:
+L2, L3
+Partial assignments:
+L1, MO, 8:00
