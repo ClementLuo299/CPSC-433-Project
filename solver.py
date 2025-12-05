@@ -70,7 +70,7 @@ def calculate_heuristic(state, weights):
 
 # Note that the attempts parameter is different from the number of restarts in the solve function
 # The attempts parameter is the number of attempts that we will conduct regardless of whether we found a solution or not
-def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=False, attempts=1):
+def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=True, attempts=5):
     if nodes_visited is None:
         nodes_visited = [0]
 
@@ -132,6 +132,10 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
     # Try just assigning a constant score for each slot since the search is slow
     scored_slots = [(0, slot) for slot in valid_slots]
 
+    # Shuffle valid slots
+    if randomize:
+        random.shuffle(scored_slots)
+
     # Original code
     # Sort slots by cost
     """
@@ -152,6 +156,22 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
     
     for _, slot in scored_slots:
         next_state = state.assign(best_var, slot)
+
+        # Quick check for dead branches
+        dead = False
+        for crs in next_state.get_unassigned_courses():
+            has_valid = False
+            for sl in next_state.problem.valid_slots[crs]:
+                if next_state.is_valid(crs, sl):
+                    has_valid = True
+                    break
+            if not has_valid:
+                dead = True
+                break
+
+        if dead:
+            continue  # Skip this slot since it is a dead branch
+
         sol, cost = find_initial_solution(next_state, weights, depth+1, nodes_visited, randomize)
         if sol:
             return sol, cost
