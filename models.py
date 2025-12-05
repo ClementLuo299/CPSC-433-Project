@@ -102,11 +102,19 @@ class Slot:
         # Determine Duration
         # Standard UofC: MWF = 60 mins (50+10), TR = 90 mins (75+15)
         # We assume this applies to ALL slots based on Day.
-        if self.day in ["TU", "TH"]:
-            self.duration = 90
-        else:
-            self.duration = 60
-            
+        if self.slot_type == "LEC":
+            # Lectures: M/W/F 1h, Tu/Th 1.5h
+            if self.day in ["TU", "TH"]:
+                self.duration = 90
+            else:
+                self.duration = 60
+        else:  # TUT or LAB
+            # Tutorials/Labs: Fri 2h, otherwise 1h
+            if self.day == "FR":
+                self.duration = 120
+            else:
+                self.duration = 60
+                    
         self.end_min = self.start_min + self.duration
         
         # Atomic Slots for Collision Detection
