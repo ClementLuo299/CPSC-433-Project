@@ -70,17 +70,61 @@ def calculate_heuristic(state, weights):
 
 # Note that the attempts parameter is different from the number of restarts in the solve function
 # The attempts parameter is the number of attempts that we will conduct regardless of whether we found a solution or not
-def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=True, attempts=4):
+def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=True, attempts=1):
+    def local_cost(course, slot, state, weights):
+        _, w_pref, w_pair, w_secdiff, pen_notpaired, pen_section = weights
+        cost = 0
+
+        # 1. Preferences
+        prefs = state.problem.preferences.get(course, [])
+        for pref_slot, val in prefs:
+            if slot.id != pref_slot:
+                cost += val * w_pref
+
+        # 2. Pair penalties
+        for (c1, c2) in state.problem.pairs:
+            if c1 == course and c2 in state.assignments:
+                if not slot.overlaps(state.assignments[c2]):
+                    cost += pen_notpaired * w_pair
+
+            if c2 == course and c1 in state.assignments:
+                if not slot.overlaps(state.assignments[c1]):
+                    cost += pen_notpaired * w_pair
+
+        # 3. Section difference (same course, different sections)
+        for other, other_slot in state.assignments.items():
+            if (other.dept == course.dept and
+                    other.number == course.number and
+                    other.type == course.type):
+
+                if slot.overlaps(other_slot):
+                    cost += pen_section * w_secdiff
+
+        return cost
 
     #This section only runs if we want to try for multiple attempts to find initial solution
     if depth == 0 and attempts > 1:
         best_sol = None
         best_cost = float('inf')
 
-        # Run our search for each attempt
-        for i in range(attempts):
+        for _ in range(attempts):
+            temp_state = State(
+                state.problem,
+                state.assignments.copy(),
+                {s: u.copy() for s, u in state.slot_usage.items()},
+                list(state.assigned_500_slots)
+            )
             nodes = [0]
-            sol, cost = find_initial_solution(state, weights, 0, nodes, randomize=randomize, attempts=1)
+
+            sol, cost = find_initial_solution(
+                temp_state,
+                weights,
+                depth=0,
+                nodes_visited=nodes,
+                randomize=True,
+                attempts=1
+            )
+
             if sol is not None and cost < best_cost:
                 best_sol = sol
                 best_cost = cost
@@ -157,12 +201,27 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
         best_var, valid_slots = candidates[0]
     
     # LCV
-    # Try just assigning a constant score for each slot since the search is slow
-    scored_slots = [(0, slot) for slot in valid_slots]
+    scored_slots = []
+    for slot in valid_slots:
+        score = local_cost(best_var, slot, state, weights)
+        scored_slots.append((score, slot))
 
-    # Shuffle valid slots
+    # Try those with lower score
+    scored_slots.sort(key=lambda x: x[0])
+
+    # Randomize tied slots
     if randomize:
-        random.shuffle(scored_slots)
+        grouped = {}
+        for score, slot in scored_slots:
+            grouped.setdefault(score, []).append((score, slot))
+
+        new_list = []
+        for score in sorted(grouped.keys()):
+            group = grouped[score]
+            random.shuffle(group)
+            new_list.extend(group)
+
+        scored_slots = new_list
 
     # Original code
     # Sort slots by cost
@@ -174,27 +233,21 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
         scored_slots.append((cost, slot))
     """
     
-    if randomize:
-        # Add some noise to sorting or just shuffle top K?
-        # Let's just shuffle equivalent costs or small noise
-        random.shuffle(scored_slots) # Full shuffle for exploration
-        scored_slots.sort(key=lambda x: x[0] + random.random() * 0.1) # Slight noise to break ties randomly
-    else:
-        scored_slots.sort(key=lambda x: x[0])
-    
     for _, slot in scored_slots:
         # Make temporary assignment
         temp = state.assign_inplace(best_var, slot)
 
-        # Check for dead branches (where there are no valid slots)
+        # Weak forward checking, declare branch dead if there are no valid slots
         dead = False
         for crs in state.get_unassigned_courses():
-            has_valid = False
+            valid_count = 0
             for sl in state.problem.valid_slots[crs]:
                 if state.is_valid(crs, sl):
-                    has_valid = True
-                    break
-            if not has_valid:
+                    valid_count += 1
+                    if valid_count >= 2:
+                        break
+
+            if valid_count == 0:
                 dead = True
                 break
 
