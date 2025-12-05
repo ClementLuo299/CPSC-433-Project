@@ -70,7 +70,7 @@ def calculate_heuristic(state, weights):
 
 # Note that the attempts parameter is different from the number of restarts in the solve function
 # The attempts parameter is the number of attempts that we will conduct regardless of whether we found a solution or not
-def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=True, attempts=3):
+def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=True, attempts=4):
 
     #This section only runs if we want to try for multiple attempts to find initial solution
     if depth == 0 and attempts > 1:
@@ -97,20 +97,26 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
     # Greedy DFS to find ONE solution quickly
     if state.is_complete():
         return state, state.calculate_cost(weights) + state.calculate_minfilled_cost(weights[0])
-    
+
     # MRV
     unassigned = state.get_unassigned_courses()
     # Simple MRV
     best_var = None
     min_valid = float('inf')
+    valid_slots_cache = {}
     
     # Optimization: Just pick one with the fewest slots to fail fast
     candidates = []
     for course in unassigned:
-        valid_slots = []
-        for slot in state.problem.valid_slots[course]:
-            if state.is_valid(course, slot):
-                valid_slots.append(slot)
+        # Cache valid slots for each course
+        if course not in valid_slots_cache:
+            vs = []
+            for slot in state.problem.valid_slots[course]:
+                if state.is_valid(course, slot):
+                    vs.append(slot)
+            valid_slots_cache[course] = vs
+
+        valid_slots = valid_slots_cache[course]
 
         if len(valid_slots) == 0:
             return None, float('inf')
