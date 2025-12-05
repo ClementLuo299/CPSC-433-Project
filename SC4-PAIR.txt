@@ -1,0 +1,39 @@
+Name:
+SC4-PAIR
+
+Lecture slots:
+MO,  8:00, 1, 0, 0
+MO,  9:00, 2, 0, 0
+MO, 10:00, 3, 0, 0
+
+Tutorial slots:
+
+Lectures:
+CPSC 101 LEC 01, false
+CPSC 102 LEC 01, false
+CPSC 103 LEC 01, false
+CPSC 104 LEC 01, false
+CPSC 105 LEC 01, false
+CPSC 106 LEC 01, false
+
+Tutorials:
+
+Not compatible:
+
+Unwanted:
+
+Preferences:
+
+Pair:
+CPSC 101 LEC 01, CPSC 106 LEC 01
+CPSC 102 LEC 01, CPSC 103 LEC 01
+CPSC 101 LEC 01, CPSC 102 LEC 01
+CPSC 104 LEC 01, CPSC 106 LEC 01
+CPSC 105 LEC 01, CPSC 106 LEC 01
+CPSC 101 LEC 01, CPSC 105 LEC 01
+CPSC 104 LEC 01, CPSC 105 LEC 01
+CPSC 101 LEC 01, CPSC 103 LEC 01
+CPSC 101 LEC 01, CPSC 104 LEC 01
+
+Partial assignments:
+CPSC 101 LEC 01, MO,  8:00

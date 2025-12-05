@@ -209,12 +209,14 @@ class State:
                 if c.dept == "CPSC" and c.number == 913:
                     c913 = c
                     break
+            if not c913:
+                return False
             if c913 and c913 in self.assignments:
                 if self.assignments[c913].id != "TU, 18:00":
                     return False
                 if slot.overlaps(self.assignments[c913]):
                     return False
-                    
+
         return True
 
     def __lt__(self, other):

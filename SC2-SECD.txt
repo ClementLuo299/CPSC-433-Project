@@ -1,0 +1,32 @@
+Name:
+SC2-SECD
+
+Lecture slots:
+MO,  8:00, 1, 1, 0
+MO,  9:00, 2, 2, 0
+MO, 10:00, 3, 3, 0
+
+Tutorial slots:
+
+Lectures:
+CPSC 101 LEC 01, false
+CPSC 101 LEC 02, false
+CPSC 101 LEC 03, false
+CPSC 101 LEC 04, false
+CPSC 102 LEC 01, false
+CPSC 102 LEC 02, false
+
+Tutorials:
+
+Not compatible:
+CPSC 101 LEC 01, CPSC 101 LEC 02
+CPSC 101 LEC 01, CPSC 101 LEC 03
+CPSC 101 LEC 01, CPSC 101 LEC 04
+
+Unwanted:
+
+Preferences:
+
+Pair:
+
+Partial assignments:
