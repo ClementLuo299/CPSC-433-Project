@@ -170,7 +170,7 @@ def solve(problem, weights):
 
     # 1. Find Initial Solution (Greedy DFS) to set bound
     # This helps prune the search space massively
-    print("Finding initial solution (Greedy DFS)...")
+    print("Finding initial solution (Greedy DFS) to set bound...")
     best_solution, best_cost = find_initial_solution(initial_state, weights)
     
     if best_solution:
@@ -178,8 +178,8 @@ def solve(problem, weights):
     else:
         print("No initial solution found with greedy DFS. Trying randomized restarts...")
         # Try randomized restarts
-        for i in range(20): # Increased to 20 restarts
-            print(f"Restart {i+1}/20...")
+        for i in range(10): # Increased to 10 restarts
+            print(f"Restart {i+1}/10...")
             sol, cost = find_initial_solution(initial_state, weights, nodes_visited=[0], randomize=True)
             if sol:
                 best_solution = sol
