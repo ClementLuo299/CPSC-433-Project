@@ -96,7 +96,19 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
 
     # Greedy DFS to find ONE solution quickly
     if state.is_complete():
-        return state, state.calculate_cost(weights) + state.calculate_minfilled_cost(weights[0])
+        new_assignments = state.assignments.copy()
+        new_slot_usage = {slot: usage.copy() for slot, usage in state.slot_usage.items()}
+        new_assigned_500_slots = list(state.assigned_500_slots)
+
+        solution_state = State(
+            state.problem,
+            new_assignments,
+            new_slot_usage,
+            new_assigned_500_slots
+        )
+
+        total_cost = solution_state.calculate_cost(weights) + solution_state.calculate_minfilled_cost(weights[0])
+        return solution_state, total_cost
 
     # MRV
     unassigned = state.get_unassigned_courses()
@@ -120,6 +132,12 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
 
         if len(valid_slots) == 0:
             return None, float('inf')
+
+        if len(valid_slots) == 1:
+            # Forced assignment course found
+            candidates = [(course, valid_slots)]
+            min_valid = 1
+            break
 
         if len(valid_slots) < min_valid:
             min_valid = len(valid_slots)
