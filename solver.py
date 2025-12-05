@@ -70,9 +70,7 @@ def calculate_heuristic(state, weights):
 
 # Note that the attempts parameter is different from the number of restarts in the solve function
 # The attempts parameter is the number of attempts that we will conduct regardless of whether we found a solution or not
-def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=True, attempts=5):
-    if nodes_visited is None:
-        nodes_visited = [0]
+def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=True, attempts=3):
 
     #This section only runs if we want to try for multiple attempts to find initial solution
     if depth == 0 and attempts > 1:
@@ -88,6 +86,9 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
                 best_cost = cost
 
         return best_sol, best_cost
+
+    if nodes_visited is None:
+        nodes_visited = [0]
     
     nodes_visited[0] += 1
     if nodes_visited[0] > 5000: # Increased limit to 5000 nodes
@@ -110,9 +111,12 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
         for slot in state.problem.valid_slots[course]:
             if state.is_valid(course, slot):
                 valid_slots.append(slot)
+
+        if len(valid_slots) == 0:
+            return None, float('inf')
+
         if len(valid_slots) < min_valid:
             min_valid = len(valid_slots)
-            best_var = course
             candidates = [(course, valid_slots)]
         elif len(valid_slots) == min_valid:
             candidates.append((course, valid_slots))
@@ -155,14 +159,15 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
         scored_slots.sort(key=lambda x: x[0])
     
     for _, slot in scored_slots:
-        next_state = state.assign(best_var, slot)
+        # Make temporary assignment
+        temp = state.assign_inplace(best_var, slot)
 
-        # Quick check for dead branches
+        # Check for dead branches (where there are no valid slots)
         dead = False
-        for crs in next_state.get_unassigned_courses():
+        for crs in state.get_unassigned_courses():
             has_valid = False
-            for sl in next_state.problem.valid_slots[crs]:
-                if next_state.is_valid(crs, sl):
+            for sl in state.problem.valid_slots[crs]:
+                if state.is_valid(crs, sl):
                     has_valid = True
                     break
             if not has_valid:
@@ -170,10 +175,14 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
                 break
 
         if dead:
-            continue  # Skip this slot since it is a dead branch
+            state.unassign_inplace(temp)
+            continue
 
-        sol, cost = find_initial_solution(next_state, weights, depth+1, nodes_visited, randomize)
-        if sol:
+        sol, cost = find_initial_solution(state, weights, depth+1, nodes_visited, randomize)
+
+        state.unassign_inplace(temp)
+
+        if sol is not None:
             return sol, cost
             
     return None, float('inf')

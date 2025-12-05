@@ -18,26 +18,74 @@ class State:
         # Create new state (lightweight copy)
         new_assignments = self.assignments.copy()
         new_assignments[course] = slot
-        
+
         new_slot_usage = self.slot_usage.copy()
         if slot not in new_slot_usage:
             new_slot_usage[slot] = {'LEC': 0, 'TUT': 0, 'LAB': 0}
         else:
             new_slot_usage[slot] = new_slot_usage[slot].copy()
-            
+
         if course.type == "LEC":
             new_slot_usage[slot]['LEC'] += 1
         elif course.type == "TUT":
             new_slot_usage[slot]['TUT'] += 1
         elif course.type == "LAB":
             new_slot_usage[slot]['LAB'] += 1
-            
+
         new_assigned_500_slots = self.assigned_500_slots
         if course.is_500_level:
-            new_assigned_500_slots = list(self.assigned_500_slots) # Copy list
+            new_assigned_500_slots = list(self.assigned_500_slots)  # Copy list
             new_assigned_500_slots.append(slot)
-            
+
         return State(self.problem, new_assignments, new_slot_usage, new_assigned_500_slots)
+
+    def assign_inplace(self, course, slot):
+        prev_assignment = self.assignments.get(course)
+
+        # Slot usage backup
+        if slot not in self.slot_usage:
+            prev_slot_usage = None
+            self.slot_usage[slot] = {'LEC': 0, 'TUT': 0, 'LAB': 0}
+        else:
+            prev_slot_usage = self.slot_usage[slot].copy()
+
+        # assigned_500 backup
+        added_500 = False
+
+        # Apply assignment
+        self.assignments[course] = slot
+
+        if course.type == "LEC":
+            self.slot_usage[slot]['LEC'] += 1
+        elif course.type == "TUT":
+            self.slot_usage[slot]['TUT'] += 1
+        elif course.type == "LAB":
+            self.slot_usage[slot]['LAB'] += 1
+
+        if course.is_500_level:
+            self.assigned_500_slots.append(slot)
+            added_500 = True
+
+        return (course, slot, prev_assignment, prev_slot_usage, added_500)
+
+    def unassign_inplace(self, backup):
+        course, slot, prev_assignment, prev_slot_usage, added_500 = backup
+
+        # Undo assignments
+        if prev_assignment is None:
+            del self.assignments[course]
+        else:
+            self.assignments[course] = prev_assignment
+
+        # Undo slot_usage
+        if prev_slot_usage is None:
+            del self.slot_usage[slot]
+        else:
+            self.slot_usage[slot] = prev_slot_usage
+
+        # Undo 500-level
+        if added_500:
+            self.assigned_500_slots.pop()
 
     def is_valid(self, course, slot):
         # 1. Max Capacity
