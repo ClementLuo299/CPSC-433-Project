@@ -68,9 +68,26 @@ def calculate_heuristic(state, weights):
 
     return h
 
-def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=False):
+# Note that the attempts parameter is different from the number of restarts in the solve function
+# The attempts parameter is the number of attempts that we will conduct regardless of whether we found a solution or not
+def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize=False, attempts=1):
     if nodes_visited is None:
         nodes_visited = [0]
+
+    #This section only runs if we want to try for multiple attempts to find initial solution
+    if depth == 0 and attempts > 1:
+        best_sol = None
+        best_cost = float('inf')
+
+        # Run our search for each attempt
+        for i in range(attempts):
+            nodes = [0]
+            sol, cost = find_initial_solution(state, weights, 0, nodes, randomize=randomize, attempts=1)
+            if sol is not None and cost < best_cost:
+                best_sol = sol
+                best_cost = cost
+
+        return best_sol, best_cost
     
     nodes_visited[0] += 1
     if nodes_visited[0] > 5000: # Increased limit to 5000 nodes
@@ -112,12 +129,18 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
         best_var, valid_slots = candidates[0]
     
     # LCV
+    # Try just assigning a constant score for each slot since the search is slow
+    scored_slots = [(0, slot) for slot in valid_slots]
+
+    # Original code
     # Sort slots by cost
+    """
     scored_slots = []
     for slot in valid_slots:
         next_state = state.assign(best_var, slot)
         cost = next_state.calculate_cost(weights)
         scored_slots.append((cost, slot))
+    """
     
     if randomize:
         # Add some noise to sorting or just shuffle top K?
