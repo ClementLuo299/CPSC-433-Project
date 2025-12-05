@@ -35,8 +35,8 @@ def calculate_heuristic(state, weights):
         total_current = current_usage['LEC'] + current_usage['TUT'] + current_usage['LAB']
         max_possible = total_current + potential_additions[slot]
         
-        if max_possible < slot.min_filled:
-            h += (slot.min_filled - max_possible) * w_minfilled
+        if max_possible < slot.lecture_min:
+            h += (slot.lecture_min - max_possible) * w_minfilled
 
     # 2. Preference Heuristic
     # Sum of min preference penalty for each unassigned course
@@ -86,7 +86,7 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
     best_var = None
     min_valid = float('inf')
     
-    # Optimization: Just pick one with fewest slots to fail fast
+    # Optimization: Just pick one with the fewest slots to fail fast
     candidates = []
     for course in unassigned:
         valid_slots = []
@@ -100,7 +100,7 @@ def find_initial_solution(state, weights, depth=0, nodes_visited=None, randomize
         elif len(valid_slots) == min_valid:
             candidates.append((course, valid_slots))
             
-    # Tie break with degree?
+    # Tie-break with degree?
     # Just pick first for speed
     if not candidates:
         return None, float('inf')

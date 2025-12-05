@@ -49,15 +49,26 @@ class State:
             if usage['TUT'] >= slot.lecture_max: # TUT uses lecture_max (col 2)
                 return False
         elif course.type == "LAB":
-            if usage['LAB'] >= slot.lab_max: # LAB uses lab_max (col 3)
+            if usage['LAB'] >= slot.lecture_max: # LAB uses lecture_max (col 2)
                 return False
             
         # 2. Active Learning (AL)
-        # Assumption: If AL required, LectureMax (or LabMax) must be > 0? 
-        # Or maybe AL is not strictly enforced by capacity in this simplified input?
-        # Prompt says: "If a course requires AL, the slot must have ALmax > 0."
-        # Given input format `3,2,1`, we assume `3` is LectureMax. If `3 > 0`, it supports AL?
-        # Let's assume standard slots support AL if they have capacity.
+        # If this course requires AL but this slot doesn't have any AL capacity return false
+        if course.al_required:
+            al_capacity = slot.al_max
+            if al_capacity == 0:
+                return False
+            elif al_capacity > 0:
+                al_taken = 0
+
+                # For all courses already in this slot, if it requires AL increment counter by 1
+                # If counter > al_capacity return false
+                for assigned_course, assigned_slot in self.assignments.items():
+                    if assigned_slot == slot:
+                        if assigned_course.al_required:
+                            al_taken += 1
+                            if al_taken >= al_capacity:
+                                return False
         
         # 3. No Overlap (Lecture vs its own Tutorial)
         if course.type == "TUT" and course.parent_id:
@@ -239,6 +250,6 @@ class State:
         cost = 0
         for slot, usage in self.slot_usage.items():
             total_usage = usage['LEC'] + usage['TUT'] + usage['LAB']
-            if total_usage < slot.min_filled:
-                cost += (slot.min_filled - total_usage) * w_minfilled
+            if total_usage < slot.lecture_min:
+                cost += (slot.lecture_min - total_usage) * w_minfilled
         return cost

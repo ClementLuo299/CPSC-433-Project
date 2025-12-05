@@ -61,9 +61,15 @@ class Slot:
         
         # Parse capacities
         # Assumption: LectureMax, LabMax, MinFilled
+        # self.lecture_max = int(parts[2])
+        # self.lab_max = int(parts[3])
+        # self.min_filled = int(parts[4])
+
+        # Parse capacities
+        # Assumption: LectureMax, LectureMin, ALMax
         self.lecture_max = int(parts[2])
-        self.lab_max = int(parts[3])
-        self.min_filled = int(parts[4])
+        self.lecture_min = int(parts[3])
+        self.al_max = int(parts[4])
         
         # Parse time for evening check
         time_parts = self.time.split(':')
