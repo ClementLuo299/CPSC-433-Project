@@ -3,6 +3,7 @@ import random
 from collections import defaultdict
 import time
 from state import State
+from models import Course
 
 def calculate_heuristic(state, weights):
     w_minfilled, w_pref, _, _, _, _ = weights
@@ -167,6 +168,55 @@ def solve(problem, weights):
             print(f"Error: Partial assignment {course.id} to {slot_id} is invalid")
             return None
         initial_state = initial_state.assign(course, slot)
+
+    # If CPSC 351 and/or CPSC 413 are in the input
+    c351 = None
+    c413 = None
+    special_slot = None
+
+    for c in problem.lectures:
+        if c.number == 351 and c.dept == "CPSC":
+            c351 = c
+        elif c.number == 413 and c.dept == "CPSC":
+            c413 = c
+
+    # Check if their special tutorial time is a valid slot in the problem
+    for s in problem.tutorial_slots:
+        if s.day == "TU" and s.hour == 18 and s.minute == 0:
+            special_slot = s
+            special_slot_max = special_slot.lecture_max
+
+    # If its required tutorial slot is a valid slot, assign the tutorial to that slot
+    if c351:
+        if special_slot and c413:
+            if special_slot_max < 2:
+                print(f"Special tutorial time for CPSC 851 and CPSC 913 can only handle 1 spot")
+                return None, float('inf')
+        if special_slot:
+            c851 = Course("CPSC 851 TUT 01")
+            # Add the special TUT to the list of lectures to ensure len(assignments) is consistent
+            problem.lectures.append(c851)
+            initial_state = initial_state.assign(c851, special_slot)
+        else:
+            print(f"CRITICAL ERROR: Special Tutorial for CPSC 851 has NO valid slots after precomputation!")
+            print(f"Since CPSC 351 is assigned, CPSC 851 must have its special tutorial assigned")
+            return None, float('inf')
+
+    # If its required tutorial slot is a valid slot, assign the tutorial to that slot
+    if c413:
+        if special_slot and c351:
+            if special_slot_max < 2:
+                print(f"Special tutorial time for CPSC 851 and CPSC 913 can only handle 1 spot")
+                return None, float('inf')
+        if special_slot:
+            c913 = Course("CPSC 913 TUT 01")
+            # Add the special TUT to the list of lectures to ensure len(assignments) is consistent
+            problem.lectures.append(c913)
+            initial_state = initial_state.assign(c913, special_slot)
+        else:
+            print(f"CRITICAL ERROR: Special Tutorial for CPSC 913 has NO valid slots after precomputation!")
+            print(f"Since CPSC 413 is assigned, CPSC 913 must have its special tutorial assigned")
+            return None, float('inf')
 
     # 1. Find Initial Solution (Greedy DFS) to set bound
     # This helps prune the search space massively

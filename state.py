@@ -123,48 +123,15 @@ class State:
         if course.type == "LEC":
             if slot.day == "TU" and slot.hour == 11 and slot.minute == 0:
                 return False
-            
+
         if not self.check_special_constraints(course, slot):
             return False
 
         return True
 
-    
-# Special Constraints (CPSC 851/913)
+    # When assigning 351 and 413 classes/tutorials they cannot be overlapping with 851/913
     def check_special_constraints(self, course, slot):
-        # CPSC 851 vs CPSC 351
-        # CPSC 913 vs CPSC 413
-        # If 351 is scheduled, 851 must be TU 18:00
-        
-        # Case 1: Assigning 851
-        if course.number == 851 and course.dept == "CPSC":
-            # Check if 351 is assigned
-            c351 = None
-            for c in self.problem.lectures:
-                if c.dept == "CPSC" and c.number == 351:
-                    c351 = c
-                    break
-            if c351 and c351 in self.assignments:
-                # 351 is assigned, so 851 MUST be TU 18:00
-                if slot.id != "TU, 18:00":
-                    return False
-                # And cannot overlap 351 (Implicitly handled by Not Compatible if defined, or we check here)
-                if slot.overlaps(self.assignments[c351]):
-                    return False
-        
-        # If 351 exists in the PROBLEM (even if not assigned yet), 851 MUST be TU 18:00
-        if course.number == 851 and course.dept == "CPSC":
-             # Check existence of 351
-             c351 = None
-             for c in self.problem.lectures:
-                 if c.dept == "CPSC" and c.number == 351:
-                     c351 = c
-                     break
-             if c351:
-                 if slot.id != "TU, 18:00":
-                     return False
-        
-        # Case 2: Assigning 351
+
         if course.number == 351 and course.dept == "CPSC":
             # Check if 851 is assigned
             c851 = None
@@ -175,45 +142,21 @@ class State:
             if c851 and c851 in self.assignments:
                 # 851 is assigned, so it MUST be TU 18:00.
                 if self.assignments[c851].id != "TU, 18:00":
-                    return False # Should have been caught earlier, but for safety
+                    return False  # Should have been caught earlier, but for safety
                 if slot.overlaps(self.assignments[c851]):
                     return False
 
-        # Same for 913/413
-        if course.number == 913 and course.dept == "CPSC":
-            c413 = None
-            for c in self.problem.lectures:
-                if c.dept == "CPSC" and c.number == 413:
-                    c413 = c
-                    break
-            if c413 and c413 in self.assignments:
-                if slot.id != "TU, 18:00":
-                    return False
-                if slot.overlaps(self.assignments[c413]):
-                    return False
-
-        # If 413 exists in the PROBLEM, 913 MUST be TU 18:00
-        if course.number == 913 and course.dept == "CPSC":
-             c413 = None
-             for c in self.problem.lectures:
-                 if c.dept == "CPSC" and c.number == 413:
-                     c413 = c
-                     break
-             if c413:
-                 if slot.id != "TU, 18:00":
-                     return False
-                    
         if course.number == 413 and course.dept == "CPSC":
+            # Check if 851 is assigned
             c913 = None
             for c in self.problem.lectures:
                 if c.dept == "CPSC" and c.number == 913:
-                    c913 = c
+                    c851 = c
                     break
-            if not c913:
-                return False
             if c913 and c913 in self.assignments:
+                # 913 is assigned, so it MUST be TU 18:00.
                 if self.assignments[c913].id != "TU, 18:00":
-                    return False
+                    return False  # Should have been caught earlier, but for safety
                 if slot.overlaps(self.assignments[c913]):
                     return False
 
